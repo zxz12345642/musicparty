@@ -1,17 +1,20 @@
 <template>
-  <img alt="Vue logo" src="./assets/logo.png">
-  <HelloWorld msg="Welcome to Your Vue.js App"/>
+  <div>
+    <PlaySongList></PlaySongList>
+    <ChatRoom></ChatRoom>
+    <div v-if="store.isLoggedIn">
+      <GetMusicList></GetMusicList>
+    </div>
+  </div>
 </template>
 
-<script>
-import HelloWorld from './components/HelloWorld.vue'
+<script setup>
+import ChatRoom from './components/ChatRoom.vue';
+import GetMusicList from './components/GetMusicList.vue';
+import PlaySongList from './components/PlaySongList.vue';
+import { useStore } from './store/state';
 
-export default {
-  name: 'App',
-  components: {
-    HelloWorld
-  }
-}
+const store=useStore()
 </script>
 
 <style>
