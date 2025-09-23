@@ -1,14 +1,18 @@
 import { defineStore } from "pinia";
-import { Howl } from 'howler';
-
-export const howlstore = defineStore("howl", {
+import { Howl } from "howler";
+import { musicStore } from "./music";
+export const howlStore = defineStore("howl", {
   state: () => ({
     isPlaying: false,
     progress: 0,
     duration: 0,
-    sound: null
+    sound: null,
+    lyric: "",
   }),
   actions: {
+    getMusicStore() {
+      return musicStore();
+    },
     getHowlInstance(options) {
       if (this.sound) {
         this.sound.unload();
@@ -20,21 +24,23 @@ export const howlstore = defineStore("howl", {
     // 播放音乐
     playMusic(url) {
       // 使用统一方法创建实例
+      this.isPlaying = false;
       this.getHowlInstance({
         src: [url],
         html5: true,
-        onPlay: () => {
+        onplay: () => {
           this.isPlaying = true;
           this.duration = this.sound.duration();
           this.updateProgress();
         },
-        onPause: () => {
+        onpause: () => {
           this.isPlaying = false;
         },
-        onEnd: () => {
+        onend: () => {
+          this.getMusicStore.nextSong();
           this.isPlaying = false;
           this.progress = 0;
-        }
+        },
       });
       this.sound.play();
     },
@@ -49,6 +55,6 @@ export const howlstore = defineStore("howl", {
         this.progress = this.sound.seek() || 0;
         requestAnimationFrame(() => this.updateProgress());
       }
-    }
-  }
+    },
+  },
 });

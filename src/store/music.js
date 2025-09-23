@@ -1,18 +1,30 @@
 import { defineStore } from "pinia";
 import { useStore } from "./state";
-export const musicStore=defineStore("music",{
-    state:() => ({
-        playcontainer:[],
-        state:""
-    }),
-    actions:{
-        sendplaycontainer(action){
-            const store=useStore();
-            if(!store.isLoggedIn){
-                return;
-            }
-            const message={"action":action,"data":this.playcontainer}
-            store.wsMusic.send(JSON.stringify(message))
-        }
-    }
-})
+export const musicStore = defineStore("music", {
+  state: () => ({
+    playContainer: [],
+    state: "",
+  }),
+  actions: {
+    sendPlayContainer(action) {
+      const store = useStore();
+      if (!store.isLoggedIn) {
+        return;
+      }
+      const message = { action: action, data: this.playContainer };
+      store.wsMusic.send(JSON.stringify(message));
+    },
+    nextSong() {
+      if (this.playContainer.length === 0) {
+        console.log("播放列表为空，没有歌曲可切");
+        return;
+      }
+      if (this.playContainer.length === 1) {
+        console.log("已到最后一首，没有下一首");
+        return;
+      }
+
+      this.playContainer = this.playContainer.slice(1);
+    },
+  },
+});
