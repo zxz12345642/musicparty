@@ -1,5 +1,5 @@
 <template>
-    <div v-for="(song, index) in store.playcontainer" :key="song.songmid">
+    <div v-for="(song, index) in mstore.playcontainer" :key="song.songmid">
         <p>
             {{ index + 1 }}. {{ song.songname }}
             <span v-if="index === 0 && isLoading">加载中...</span>
@@ -9,34 +9,34 @@
     </div>
 </template>
 <script setup>
-import { useStore } from '@/store/state';
 import { onMounted, watch, ref } from 'vue';
-import { Howl } from 'howler';
+import { musicStore } from '@/store/music';
+import { howlstore } from '@/store/howl';
 import axios from 'axios';
 
-const store = useStore();
+const mstore=musicStore();
 const isLoading = ref(false);
 const error = ref(null);
-let sound = null;
+const howl = howlstore();
 
 function deletesong(songmid) {
-    const isPlayingSong = store.playcontainer[0]?.songmid === songmid;
-    if (isPlayingSong && sound) {
-        sound.stop();
-        sound.unload();
-        sound = null;
+    const isPlayingSong = mstore.playcontainer[0]?.songmid === songmid;
+    if (isPlayingSong) {
+        howl.pauseMusic(); // 使用store的方法暂停
+        howl.sound = null; // 清除实例
     }
-    store.playcontainer = store.playcontainer.filter(song => {
+    mstore.playcontainer = mstore.playcontainer.filter(song => {
         return song.songmid !== songmid;
     });
+    mstore.sendplaycontainer("删除");
 }
 
 async function handlePlayFirstSong() {
-    if (store.playcontainer.length === 0 || isLoading.value) {
+    if (mstore.playcontainer.length === 0 || isLoading.value) {
         return;
     }
 
-    const firstSongMid = store.playcontainer[0].songmid;
+    const firstSongMid = mstore.playcontainer[0].songmid;
     isLoading.value = true;
     error.value = null; // 改为null更合适
     try {
@@ -47,25 +47,8 @@ async function handlePlayFirstSong() {
         });
         if (response.data.result == 100 && response.data.data) {
             const audiourl = response.data.data[firstSongMid];
-            console.log(audiourl);
-            
             // 停止并卸载当前音频
-            if (sound) {
-                sound.stop();
-                sound.unload();
-            }
-            
-            // 创建Howl实例时直接配置事件处理（关键修改）
-            sound = new Howl({
-                src: [audiourl],
-                autoplay: true,
-                format: ['m4a'],
-                // 将错误事件监听直接配置在这里，而不是用sound.on()
-                onerror: (err) => {
-                    console.error('播放错误:', err);
-                    error.value = true;
-                }
-            });
+            howl.playMusic(audiourl);
         }
     } catch (err) {
         console.error('请求播放链接失败:', err);
@@ -76,7 +59,7 @@ async function handlePlayFirstSong() {
 }
 
 watch(
-    () => store.playcontainer[0]?.songmid,
+    () => mstore.playcontainer[0]?.songmid,
     (newMid, oldMid) => {
         if (newMid && newMid !== oldMid) {
             handlePlayFirstSong();
@@ -85,7 +68,7 @@ watch(
 );
 
 onMounted(() => {
-    if (store.playcontainer.length > 0) {
+    if (mstore.playcontainer.length > 0) {
         handlePlayFirstSong();
     }
 });

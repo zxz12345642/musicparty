@@ -55,8 +55,8 @@
 
 <script setup>
 import axios from "axios";
-import { ref, watch, computed, defineProps } from "vue";
-import { useStore } from "@/store/state";
+import { ref, watch, computed ,defineProps} from "vue";
+import { musicStore } from "@/store/music";
 
 // 接收父组件参数
 const props = defineProps({
@@ -71,7 +71,7 @@ const allSongs = ref([]);         // 所有歌曲数据
 const currentPage = ref(1);       // 当前页码
 const pageSize = ref(10);         // 每页显示数量
 const loading = ref(false);       // 加载状态
-const store=new useStore()
+const mstore=musicStore()
 
 // 当tid变化时重新获取数据
 watch(
@@ -134,10 +134,10 @@ function changePage(page) {
 // 添加到播放列表
 function addToPlaylist(song) {
   // 检查是否已在播放列表中
-  const exists = store.playcontainer.some(item => item.songmid === song.songmid);
+  const exists = mstore.playcontainer.some(item => item.songmid === song.songmid);
   if (!exists) {
-    store.playcontainer.push(song);
+    mstore.playcontainer.push(song);
+    mstore.sendplaycontainer("添加");
   }
-  console.log(store.playcontainer);
 }
 </script>
