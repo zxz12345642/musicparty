@@ -1,29 +1,94 @@
 <template>
-  <div class="lyric-container">
-    <!-- 播放状态指示 -->
-    <div class="play-status">
-      {{ hstore.isPlaying ? "正在播放" : "已暂停" }}
+  <div
+    class="lyric-container relative overflow-hidden rounded-3xl p-4 bg-gradient-to-br from-pink-50 to-purple-50 shadow-[0_4px_20px_rgba(236,72,153,0.1)] border-2 border-pink-100"
+    style="height: 320px"
+  >
+    <!-- 美乐蒂风格蝴蝶结装饰（左上角） -->
+    <div class="absolute -top-5 -left-5 w-12 h-12">
+      <div
+        class="absolute top-0 left-4 w-6 h-3 bg-pink-300 rounded-t-full"
+      ></div>
+      <div
+        class="absolute top-2 left-0 w-4 h-8 bg-pink-300 rounded-l-full"
+      ></div>
+      <div
+        class="absolute top-2 right-0 w-4 h-8 bg-pink-300 rounded-r-full"
+      ></div>
     </div>
 
-    <!-- 加载状态 -->
-    <div v-if="isLoading" class="status-text">加载歌词中...</div>
-
-    <!-- 错误状态 -->
-    <div v-if="error" class="status-text error">{{ error }}</div>
-
-    <!-- 歌词显示区域 -->
-    <div v-else-if="lyricLines.length > 0" class="lyric-scroll">
-      <p
-        v-for="(line, index) in lyricLines"
-        :key="index"
-        :class="{ 'current-line': index === currentLineIndex }"
-      >
-        {{ line.content }}
-      </p>
+    <!-- 库洛米风格恶魔角装饰（右上角） -->
+    <div class="absolute -top-3 -right-3 w-10 h-10 flex gap-1">
+      <div
+        class="w-3 h-6 bg-purple-300 rounded-t-full transform rotate-[-30deg]"
+      ></div>
+      <div
+        class="w-3 h-6 bg-purple-300 rounded-t-full transform rotate-[30deg]"
+      ></div>
     </div>
 
-    <!-- 无歌词状态 -->
-    <div v-else-if="!isLoading && !error" class="status-text">暂无歌词</div>
+    <!-- 播放状态（呼吸动画） -->
+    <div
+      class="play-status text-center mb-4 text-pink-600 font-medium text-sm animate-pulse"
+    >
+      {{ hstore.isPlaying ? "正在播放～" : "已暂停啦～" }}
+    </div>
+
+    <!-- 加载状态（跳动爱心） -->
+    <div v-if="isLoading" class="status-text text-purple-500 h-[220px]">
+      <span class="animate-bounce inline-block mr-2">💖</span>加载歌词中～
+    </div>
+
+    <!-- 错误状态（委屈表情） -->
+    <div v-if="error" class="status-text text-red-400 h-[220px]">
+      <span class="mr-2">😣</span>{{ error }}
+    </div>
+
+    <!-- 歌词显示区域（带渐变遮罩和有限显示） -->
+    <div
+      v-else-if="lyricLines.length > 0"
+      class="lyric-scroll relative h-[220px] overflow-y-auto pr-2 text-center"
+    >
+      <!-- 顶部渐变遮罩 -->
+      <div
+        class="absolute top-0 left-0 right-0 h-16 bg-gradient-to-b from-pink-50/80 to-transparent pointer-events-none z-10"
+      ></div>
+
+      <!-- 歌词内容 -->
+      <div class="pt-16 pb-16">
+        <p
+          v-for="(line, index) in lyricLines"
+          :key="index"
+          :class="[
+            'my-3 transition-all duration-500 text-base leading-relaxed',
+            // 根据与当前行的距离设置不同样式
+            index === currentLineIndex
+              ? 'text-pink-500 font-bold text-lg scale-105 shadow-sm drop-shadow-[0_0_8px_rgba(236,72,153,0.3)]'
+              : index > currentLineIndex - 3 && index < currentLineIndex + 3
+              ? 'text-purple-700 opacity-90'
+              : 'text-purple-400 opacity-30',
+          ]"
+          :style="{
+            // 距离当前行越远透明度越低
+            opacity: calculateOpacity(index),
+          }"
+        >
+          {{ line.content }}
+        </p>
+      </div>
+
+      <!-- 底部渐变遮罩 -->
+      <div
+        class="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-pink-50/80 to-transparent pointer-events-none z-10"
+      ></div>
+    </div>
+
+    <!-- 无歌词状态（可爱表情） -->
+    <div
+      v-else-if="!isLoading && !error"
+      class="status-text text-purple-400 h-[220px]"
+    >
+      <span class="mr-2">🥺</span>暂无歌词哦～
+    </div>
   </div>
 </template>
 
@@ -38,29 +103,37 @@ const hstore = howlStore();
 const mstore = musicStore();
 
 // 组件状态
-const lyricLines = ref([]); // 解析后的歌词数组
-const currentLineIndex = ref(-1); // 当前歌词索引
+const lyricLines = ref([]);
+const currentLineIndex = ref(-1);
 const isLoading = ref(false);
 const error = ref(null);
 let syncTimer = null;
+
+// 计算歌词行的透明度 - 距离当前行越远越透明
+const calculateOpacity = (index) => {
+  if (lyricLines.value.length === 0) return 0;
+
+  const distance = Math.abs(index - currentLineIndex.value);
+  // 只显示当前行前后各3行，之外的行透明度极低
+  if (distance > 3) return 0.1;
+
+  // 距离当前行越近透明度越高
+  return 1 - distance * 0.2;
+};
 
 // 解析歌词
 function parseLyric(lyricString) {
   const lines = lyricString.split("\n");
   const result = [];
-  // 匹配时间标签的正则 [mm:ss.ms]
   const timeRegex = /\[(\d{2}):(\d{2})\.(\d{2,3})\]/;
 
   lines.forEach((line) => {
     const matches = line.match(timeRegex);
     if (matches) {
-      // 转换时间为秒
       const minutes = parseInt(matches[1], 10);
       const seconds = parseInt(matches[2], 10);
       const milliseconds = parseInt(matches[3], 10);
       const time = minutes * 60 + seconds + milliseconds / 1000;
-
-      // 提取歌词内容
       const content = line.replace(timeRegex, "").trim();
 
       if (content) {
@@ -69,7 +142,6 @@ function parseLyric(lyricString) {
     }
   });
 
-  // 按时间排序
   return result.sort((a, b) => a.time - b.time);
 }
 
@@ -92,15 +164,14 @@ function getLyric() {
     .then((response) => {
       if (response.data.result === 100 && response.data.data?.lyric) {
         hstore.lyric = response.data;
-        // 解析歌词并存储
         lyricLines.value = parseLyric(response.data.data.lyric);
       } else {
         error.value = "未获取到歌词数据";
       }
     })
-    .catch((error) => {
-      console.error("获取歌词失败:", error);
-      this.error = "获取歌词失败，请稍后再试";
+    .catch((err) => {
+      console.error("获取歌词失败:", err);
+      error.value = "获取歌词失败，请稍后再试";
     })
     .finally(() => {
       isLoading.value = false;
@@ -111,9 +182,7 @@ function getLyric() {
 function syncLyric() {
   if (!hstore.isPlaying || lyricLines.value.length === 0) return;
 
-  const currentTime = hstore.progress; // 当前播放时间（秒）
-
-  // 查找当前应该显示的歌词行
+  const currentTime = hstore.progress;
   for (let i = 0; i < lyricLines.value.length; i++) {
     const isLastLine = i === lyricLines.value.length - 1;
     const nextTime = isLastLine ? Infinity : lyricLines.value[i + 1].time;
@@ -128,17 +197,20 @@ function syncLyric() {
   }
 }
 
-// 滚动到当前歌词
+// 滚动到当前歌词（平滑滚动）
 function scrollToCurrentLine() {
   const container = document.querySelector(".lyric-scroll");
-  const currentLine = container?.querySelector(".current-line");
+  const currentLine = container?.querySelector(".scale-105");
 
   if (container && currentLine) {
-    // 使当前歌词居中显示
+    // 计算滚动位置，使当前行居中
     const scrollPos =
       currentLine.offsetTop -
       container.clientHeight / 2 +
-      currentLine.offsetHeight / 2;
+      currentLine.offsetHeight / 2 -
+      32; // 调整偏移量适配遮罩
+
+    // 平滑滚动
     container.scrollTo({
       top: scrollPos,
       behavior: "smooth",
@@ -146,15 +218,11 @@ function scrollToCurrentLine() {
   }
 }
 
-// 开始同步歌词
+// 开始/停止同步
 function startSync() {
-  // 清除之前的定时器
   if (syncTimer) clearInterval(syncTimer);
-  // 每100ms检查一次进度
   syncTimer = setInterval(syncLyric, 100);
 }
-
-// 停止同步歌词
 function stopSync() {
   if (syncTimer) {
     clearInterval(syncTimer);
@@ -162,91 +230,44 @@ function stopSync() {
   }
 }
 
-// 监听播放状态变化
+// 监听播放状态和歌曲变化
 watch(
   () => hstore.isPlaying,
   (newVal) => {
-    if (newVal) {
-      getLyric(); // 播放时获取歌词
-      startSync(); // 开始同步
-    } else {
-      stopSync(); // 暂停时停止同步
-    }
+    newVal ? (getLyric(), startSync()) : stopSync();
   }
 );
-
-// 监听当前播放歌曲变化
 watch(
   () => mstore.playContainer[0]?.songmid,
   () => {
-    if (hstore.isPlaying) {
-      getLyric(); // 切换歌曲时重新获取歌词
-    }
+    hstore.isPlaying && getLyric();
   }
 );
 
-// 组件卸载时清理定时器
+// 组件卸载清理
 onUnmounted(() => {
   stopSync();
 });
 </script>
 
 <style scoped>
-.lyric-container {
-  width: 100%;
-  height: 300px;
-  padding: 1rem;
-  box-sizing: border-box;
-  overflow: hidden;
-  position: relative;
-  background-color: #f9f9f9;
-  border-radius: 8px;
-}
-
-.play-status {
-  text-align: center;
-  color: #666;
-  margin-bottom: 1rem;
-  font-size: 0.9rem;
-}
-
-.lyric-scroll {
-  height: calc(100% - 2rem);
-  overflow-y: auto;
-  text-align: center;
-  padding: 1rem 0;
-}
-
-/* 隐藏滚动条但保留功能 */
+/* 自定义滚动条样式 */
 .lyric-scroll::-webkit-scrollbar {
-  display: none;
+  width: 6px;
+}
+.lyric-scroll::-webkit-scrollbar-thumb {
+  background-color: #f472b6; /* 粉色滚动条（美乐蒂色） */
+  border-radius: 3px;
+}
+.lyric-scroll::-webkit-scrollbar-track {
+  background-color: #f3e8ff; /* 淡紫色轨道（库洛米色） */
+  border-radius: 3px;
 }
 
-.lyric-scroll p {
-  margin: 0.75rem 0;
-  color: #555;
-  transition: all 0.2s ease;
-  font-size: 1rem;
-  line-height: 1.5;
-}
-
-/* 当前歌词样式 */
-.current-line {
-  color: #2563eb;
-  font-weight: 600;
-  font-size: 1.1rem;
-}
-
+/* 歌词容器样式 */
 .status-text {
-  width: 100%;
-  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #666;
-}
-
-.status-text.error {
-  color: #dc2626;
 }
 </style>

@@ -1,68 +1,116 @@
 <template>
-  <div>
-    <h3>歌曲列表</h3>
+  <div
+    class="song-list-container bg-white rounded-3xl p-6 shadow-[0_4px_20px_rgba(236,72,153,0.1)] border-2 border-pink-100"
+  >
+    <!-- 标题带装饰 -->
+    <h3 class="text-2xl font-bold text-pink-600 mb-6 flex items-center">
+      <span class="mr-2 text-purple-500">🎵</span>
+      歌曲列表
+      <span class="ml-2 inline-block w-6 h-6 relative">
+        <!-- 小蝴蝶结装饰 -->
+        <div
+          class="absolute top-0 left-1 w-4 h-2 bg-pink-300 rounded-t-full"
+        ></div>
+        <div
+          class="absolute top-1 left-0 w-2 h-4 bg-pink-300 rounded-l-full"
+        ></div>
+        <div
+          class="absolute top-1 right-0 w-2 h-4 bg-pink-300 rounded-r-full"
+        ></div>
+      </span>
+    </h3>
 
-    <!-- 歌曲列表和播放列表区域 -->
-    <div style="display: flex; gap: 20px; margin-top: 10px">
-      <!-- 歌曲列表 -->
-      <div style="flex: 3">
-        <!-- 表头 -->
-        <div style="display: flex; font-weight: bold; margin-bottom: 5px">
-          <div style="width: 60px">序号</div>
-          <div style="flex: 2">歌曲名称</div>
-          <div style="flex: 1">歌曲ID</div>
-          <div style="width: 100px">操作</div>
-        </div>
+    <!-- 歌曲列表区域 -->
+    <div class="flex-3">
+      <!-- 表头 -->
+      <div
+        class="flex font-bold mb-4 p-3 bg-gradient-to-r from-pink-100 to-purple-100 rounded-xl"
+      >
+        <div class="w-16 text-pink-600">序号</div>
+        <div class="flex-1 text-purple-600">歌曲名称</div>
+        <div class="w-24 text-pink-600">操作</div>
+      </div>
 
-        <!-- 加载状态 -->
-        <div v-if="loading">加载中...</div>
+      <!-- 加载状态 -->
+      <div
+        v-if="loading"
+        class="flex items-center justify-center py-10 text-purple-500"
+      >
+        <span class="animate-bounce mr-2">💖</span>加载歌曲中～
+      </div>
 
-        <!-- 空状态 -->
-        <div v-else-if="currentPageSongs.length === 0">没有找到歌曲数据</div>
+      <!-- 空状态 -->
+      <div
+        v-else-if="currentPageSongs.length === 0"
+        class="flex items-center justify-center py-10 text-purple-400"
+      >
+        <span class="mr-2">🥺</span>没有找到歌曲数据哦～
+      </div>
 
-        <!-- 歌曲列表内容 -->
-        <div v-else>
-          <div
-            style="display: flex; padding: 5px 0; border-bottom: 1px solid #eee"
-            v-for="(song, index) in currentPageSongs"
-            :key="song.songmid"
-          >
-            <div style="width: 60px">
-              {{ (currentPage - 1) * pageSize + index + 1 }}
-            </div>
-            <div style="flex: 2">{{ song.songname }}</div>
-            <div style="flex: 1">{{ song.songmid }}</div>
-            <div style="width: 100px">
-              <button @click="addToPlaylist(song)">添加</button>
-            </div>
+      <!-- 歌曲列表内容 -->
+      <div v-else class="space-y-1">
+        <div
+          class="flex items-center p-3 rounded-lg transition-all duration-200 hover:bg-pink-50 hover:shadow-md"
+          v-for="(song, index) in currentPageSongs"
+          :key="song.songmid"
+          :class="index % 2 === 0 ? 'bg-purple-50/50' : 'bg-white'"
+        >
+          <div class="w-16 text-center text-pink-500 font-medium">
+            {{ (currentPage - 1) * pageSize + index + 1 }}
+          </div>
+          <div class="flex-1 text-purple-700 truncate">
+            <span class="inline-block mr-2 text-pink-300">🎶</span>
+            {{ song.songname }}
+          </div>
+          <div class="w-24">
+            <button
+              @click="addToPlaylist(song)"
+              class="px-3 py-1 bg-gradient-to-r from-pink-300 to-purple-300 text-white rounded-full text-sm font-medium hover:from-pink-400 hover:to-purple-400 transform hover:scale-105 transition-all shadow-sm"
+            >
+              添加
+            </button>
           </div>
         </div>
+      </div>
 
-        <!-- 分页控件 -->
-        <div v-if="totalPages > 1" style="margin-top: 10px">
-          <button @click="changePage(1)" :disabled="currentPage === 1">
-            首页
-          </button>
-          <button
-            @click="changePage(currentPage - 1)"
-            :disabled="currentPage === 1"
-          >
-            上一页
-          </button>
-          <span>第 {{ currentPage }} / {{ totalPages }} 页</span>
-          <button
-            @click="changePage(currentPage + 1)"
-            :disabled="currentPage === totalPages"
-          >
-            下一页
-          </button>
-          <button
-            @click="changePage(totalPages)"
-            :disabled="currentPage === totalPages"
-          >
-            末页
-          </button>
-        </div>
+      <!-- 分页控件 -->
+      <div
+        v-if="totalPages > 1"
+        class="mt-6 flex justify-center items-center gap-2"
+      >
+        <button
+          @click="changePage(1)"
+          :disabled="currentPage === 1"
+          class="px-3 py-1 rounded-full text-sm disabled:opacity-50 disabled:cursor-not-allowed bg-pink-100 text-pink-600 hover:bg-pink-200 transition-colors"
+        >
+          首页
+        </button>
+        <button
+          @click="changePage(currentPage - 1)"
+          :disabled="currentPage === 1"
+          class="px-3 py-1 rounded-full text-sm disabled:opacity-50 disabled:cursor-not-allowed bg-pink-100 text-pink-600 hover:bg-pink-200 transition-colors"
+        >
+          上一页
+        </button>
+        <span
+          class="px-3 py-1 rounded-full bg-purple-100 text-purple-600 text-sm"
+        >
+          第 {{ currentPage }} / {{ totalPages }} 页
+        </span>
+        <button
+          @click="changePage(currentPage + 1)"
+          :disabled="currentPage === totalPages"
+          class="px-3 py-1 rounded-full text-sm disabled:opacity-50 disabled:cursor-not-allowed bg-purple-100 text-purple-600 hover:bg-purple-200 transition-colors"
+        >
+          下一页
+        </button>
+        <button
+          @click="changePage(totalPages)"
+          :disabled="currentPage === totalPages"
+          class="px-3 py-1 rounded-full text-sm disabled:opacity-50 disabled:cursor-not-allowed bg-purple-100 text-purple-600 hover:bg-purple-200 transition-colors"
+        >
+          末页
+        </button>
       </div>
     </div>
   </div>
@@ -72,6 +120,7 @@
 import axios from "axios";
 import { ref, watch, computed, defineProps } from "vue";
 import { musicStore } from "@/store/music";
+
 // 接收父组件参数
 const props = defineProps({
   tid: {
@@ -150,7 +199,6 @@ function changePage(page) {
 
 // 添加到播放列表
 function addToPlaylist(song) {
-  console.log(song);
   // 检查是否已在播放列表中
   const exists = mstore.playContainer.some(
     (item) => item.songmid === song.songmid
