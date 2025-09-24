@@ -1,5 +1,6 @@
 <template>
   <div>
+    <SearchSong></SearchSong>
     <div class="playlist-container">
       <h3>歌单列表（名称）</h3>
       <ul>
@@ -22,6 +23,7 @@
 import axios from "axios";
 import { ref, onMounted } from "vue";
 import SongList from "./SongList.vue";
+import SearchSong from "./SearchSong.vue";
 
 const playListData = ref([]);
 const selectedTid = ref(null);

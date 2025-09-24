@@ -10,9 +10,6 @@ export const howlStore = defineStore("howl", {
     lyric: "",
   }),
   actions: {
-    getMusicStore() {
-      return musicStore();
-    },
     getHowlInstance(options) {
       if (this.sound) {
         this.sound.unload();
@@ -37,7 +34,8 @@ export const howlStore = defineStore("howl", {
           this.isPlaying = false;
         },
         onend: () => {
-          this.getMusicStore.nextSong();
+          const mstore = musicStore();
+          mstore.nextSong();
           this.isPlaying = false;
           this.progress = 0;
         },

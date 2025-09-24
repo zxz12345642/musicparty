@@ -72,7 +72,6 @@
 import axios from "axios";
 import { ref, watch, computed, defineProps } from "vue";
 import { musicStore } from "@/store/music";
-
 // 接收父组件参数
 const props = defineProps({
   tid: {
@@ -151,6 +150,7 @@ function changePage(page) {
 
 // 添加到播放列表
 function addToPlaylist(song) {
+  console.log(song);
   // 检查是否已在播放列表中
   const exists = mstore.playContainer.some(
     (item) => item.songmid === song.songmid
