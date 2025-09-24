@@ -57,19 +57,52 @@ import { musicStore } from "@/store/music";
 import config from "../assets/config.json";
 import axios from "axios";
 import { howlStore } from "@/store/howl";
+import { useToast } from "vue-toastification";
 
 const { cookie } = config;
 const store = useStore();
 const mstore = messageStore();
 const musicS = musicStore();
 const hstore = howlStore();
+const toast = useToast();
 
-function connect() {
+async function connect() {
   if (!store.userid.trim()) {
     // 替换为更可爱的提示方式
-    alert("请输入账号哦～");
+    toast.info("请输入账号哦～", {
+      // 自定义样式（可选，让提示更可爱）
+      style: {
+        fontFamily: "Comic Sans MS, Marker Felt, sans-serif",
+        backgroundColor: "#ffe6f2", // 浅粉色背景
+        color: "#d81f7c", // 粉色文字
+        borderRadius: "16px", // 圆角
+        boxShadow: "0 4px 12px rgba(216, 31, 124, 0.2)", // 柔和阴影
+        padding: "12px 20px",
+      },
+      icon: "📱", // 自定义图标（可用 emoji）
+    });
     return;
   }
+  const response = await axios.get("http://localhost:8081/getUserList", {
+    params: {
+      userID: store.userid,
+    },
+  });
+  if (response.data) {
+    // 用户已存在：提示并终止函数
+    toast.warning("这个账号已经被使用啦～ 换一个吧～", {
+      style: {
+        fontFamily: "Comic Sans MS, Marker Felt, sans-serif",
+        backgroundColor: "#fff5e6", // 浅橙色背景
+        color: "#e67e22", // 橙色文字
+        borderRadius: "16px",
+        boxShadow: "0 4px 12px rgba(230, 126, 34, 0.2)",
+      },
+      icon: "⚠️",
+    });
+    return; // 这里的 return 会终止整个 connect() 函数
+  }
+
   const wsUrlChat = `ws://localhost:8081/chat/${store.userid.trim()}`;
   const wsUrlMusic = `ws://localhost:8081/music/${store.userid.trim()}`;
   store.wsChat = new WebSocket(wsUrlChat);
@@ -78,6 +111,15 @@ function connect() {
   store.wsChat.onopen = () => {
     // 连接成功后设置登录状态为true
     store.isLoggedIn = true;
+    toast.success("🎉欢迎公主~王子殿下回来!", {
+      style: {
+        fontFamily: "Comic Sans MS, Marker Felt, sans-serif",
+        backgroundColor: "#e6ffe6", // 浅绿色背景
+        color: "#27ae60", // 绿色文字
+        borderRadius: "16px",
+        boxShadow: "0 4px 12px rgba(39, 174, 96, 0.2)",
+      },
+    });
     mstore.chatList.push("登录成功啦～ 欢迎回来！");
 
     axios.post("/api/user/setcookie", cookie);
@@ -115,24 +157,39 @@ function connect() {
 
   store.wsMusic.onmessage = (Event) => {
     const data = JSON.parse(Event.data);
+    console.log(data);
     if (data.type == "") {
       const msg = JSON.parse(data.message);
       musicS.playContainer = msg.data;
     }
+    if (data.type == "pause") {
+      hstore.pauseMusic();
+    }
+    if (data.type == "continue") {
+      if (hstore.sound) {
+        const url = hstore.sound._src;
+        // 先跳转到指定进度，再播放
+        const progress = parseFloat(data.message) || 0;
+        hstore.playMusic(url);
+        hstore.sound.seek(progress); // 关键：同步进度
+        hstore.isPlaying = true;
+      }
+    }
     if (data.type == "new") {
       if (!hstore.sound) {
-        console.log("123");
         return;
       }
+
       const message = {
         action: "refresh",
         time: hstore.sound?.seek(),
         id: data.message,
       };
+      console.log(message);
       store.wsMusic.send(JSON.stringify(message));
     }
     if (data.type == "refresh") {
-      if (data.time == null) {
+      if (data.message == null) {
         return;
       } else {
         hstore.progress = data.time;

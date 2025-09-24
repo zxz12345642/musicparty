@@ -1,4 +1,5 @@
 <template>
+  <!-- 模板内容保持不变 -->
   <div
     class="playlist-wrapper bg-white rounded-3xl p-6 shadow-[0_4px_20px_rgba(236,72,153,0.1)] border-2 border-pink-100 overflow-hidden"
   >
@@ -55,13 +56,25 @@
             </span>
           </div>
 
-          <!-- 删除按钮 -->
-          <button
-            @click="deleteSong(mstore.playContainer[0].songmid)"
-            class="px-2 py-1 bg-pink-100 text-pink-600 rounded-full text-sm hover:bg-pink-200 transition-colors"
-          >
-            <span class="mr-1">🗑️</span>删除
-          </button>
+          <!-- 播放/暂停和删除按钮 -->
+          <div class="flex items-center">
+            <!-- 播放/暂停按钮 - 根据播放状态切换 -->
+            <button
+              @click="togglePlayPause"
+              class="px-2 py-1 bg-purple-100 text-purple-600 rounded-full text-sm hover:bg-purple-200 transition-colors mr-2"
+            >
+              <span class="mr-1">{{ howl.isPlaying ? "⏸️" : "▶️" }}</span>
+              {{ howl.isPlaying ? "暂停" : "播放" }}
+            </button>
+
+            <!-- 删除按钮 -->
+            <button
+              @click="deleteSong(mstore.playContainer[0].songmid)"
+              class="px-2 py-1 bg-pink-100 text-pink-600 rounded-full text-sm hover:bg-pink-200 transition-colors"
+            >
+              <span class="mr-1">🗑️</span>删除
+            </button>
+          </div>
         </div>
 
         <!-- 歌词组件 - 当前播放歌曲专用 -->
@@ -106,43 +119,63 @@
 import { onMounted, watch, ref } from "vue";
 import { musicStore } from "@/store/music";
 import { howlStore } from "@/store/howl";
+import { useStore } from "@/store/state";
 import SongLyric from "./SongLyric.vue";
 import axios from "axios";
 
 const mstore = musicStore();
+const howl = howlStore();
 const isLoading = ref(false);
 const error = ref(null);
-const howl = howlStore();
+const store = useStore();
+// 播放/暂停切换方法
+const togglePlayPause = () => {
+  if (howl.isPlaying) {
+    howl.pauseMusic();
+    mstore.sendPlayContainer("pause");
+  } else {
+    const message = { action: "continue", data: howl.sound.seek() || 0 };
+    store.wsMusic.send(JSON.stringify(message));
+    // 如果是暂停状态，调用播放
+    if (howl.sound) {
+      howl.sound.play();
+      howl.isPlaying = true;
+      howl.updateProgress();
+    } else if (mstore.playContainer.length > 0) {
+      handlePlayFirstSong();
+    }
+  }
+};
 
 function deleteSong(songmid) {
-  const isPlayingSong = mstore.playContainer[0]?.songmid === songmid;
+  const isPlayingSong =
+    mstore.playContainer.length > 0 &&
+    mstore.playContainer[0].songmid === songmid;
+
   if (isPlayingSong) {
-    howl.pauseMusic(); // 使用store的方法暂停
-    howl.sound = null; // 清除实例
+    howl.pauseMusic();
+    howl.sound = null;
   }
-  mstore.playContainer = mstore.playContainer.filter((song) => {
-    return song.songmid !== songmid;
-  });
+
+  mstore.playContainer = mstore.playContainer.filter(
+    (song) => song.songmid !== songmid
+  );
+
   mstore.sendPlayContainer("删除");
 }
 
 async function handlePlayFirstSong() {
-  if (mstore.playContainer.length === 0 || isLoading.value) {
-    return;
-  }
+  if (mstore.playContainer.length === 0 || isLoading.value) return;
 
   const firstSongMid = mstore.playContainer[0].songmid;
   isLoading.value = true;
   error.value = null;
   try {
     const response = await axios.get("api/song/urls", {
-      params: {
-        id: firstSongMid,
-      },
+      params: { id: firstSongMid },
     });
     if (response.data.result == 100 && response.data.data) {
       const audioUrl = response.data.data[firstSongMid];
-      // 停止并卸载当前音频
       howl.playMusic(audioUrl);
     }
   } catch (err) {
@@ -152,6 +185,14 @@ async function handlePlayFirstSong() {
     isLoading.value = false;
   }
 }
+
+// 监听播放状态变化
+watch(
+  () => howl.isPlaying,
+  () => {
+    // 状态变化时可以添加需要的逻辑
+  }
+);
 
 watch(
   () => mstore.playContainer[0]?.songmid,

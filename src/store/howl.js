@@ -29,6 +29,7 @@ export const howlStore = defineStore("howl", {
           this.isPlaying = true;
           this.duration = this.sound.duration();
           this.updateProgress();
+          this.progress = this.sound.seek();
         },
         onpause: () => {
           this.isPlaying = false;
@@ -46,6 +47,7 @@ export const howlStore = defineStore("howl", {
     pauseMusic() {
       if (this.sound) {
         this.sound.pause();
+        this.isPlaying = false;
       }
     },
     updateProgress() {
