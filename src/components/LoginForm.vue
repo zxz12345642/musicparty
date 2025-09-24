@@ -54,7 +54,7 @@
 import { useStore } from "@/store/state";
 import { messageStore } from "@/store/message";
 import { musicStore } from "@/store/music";
-import config from "../assets/config.json";
+import config from "../../public/config.json";
 import axios from "axios";
 import { howlStore } from "@/store/howl";
 import { useToast } from "vue-toastification";
