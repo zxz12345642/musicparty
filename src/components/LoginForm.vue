@@ -83,7 +83,7 @@ async function connect() {
     });
     return;
   }
-  const response = await axios.get("http://localhost:8081/getUserList", {
+  const response = await axios.get("http://zxzwsy.top:8081/getUserList", {
     params: {
       userID: store.userid,
     },
@@ -103,8 +103,8 @@ async function connect() {
     return; // 这里的 return 会终止整个 connect() 函数
   }
 
-  const wsUrlChat = `ws://localhost:8081/chat/${store.userid.trim()}`;
-  const wsUrlMusic = `ws://localhost:8081/music/${store.userid.trim()}`;
+  const wsUrlChat = `ws://zxzwsy.top:8081/chat/${store.userid.trim()}`;
+  const wsUrlMusic = `ws://zxzwsy.top:8081/music/${store.userid.trim()}`;
   store.wsChat = new WebSocket(wsUrlChat);
   store.wsMusic = new WebSocket(wsUrlMusic);
 
