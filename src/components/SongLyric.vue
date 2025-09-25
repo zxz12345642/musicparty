@@ -207,7 +207,7 @@ function scrollToCurrentLine() {
     const scrollPos =
       currentLine.offsetTop -
       container.clientHeight / 2 +
-      currentLine.offsetHeight / 2 -
+      currentLine.offsetHeight / 2 +
       32; // 调整偏移量适配遮罩
 
     // 平滑滚动

@@ -161,6 +161,10 @@ async function connect() {
     if (data.type == "") {
       const msg = JSON.parse(data.message);
       musicS.playContainer = msg.data;
+      if (msg.data.length == 0) {
+        hstore.pauseMusic();
+        hstore.sound = null;
+      }
     }
     if (data.type == "pause") {
       hstore.pauseMusic();
