@@ -189,7 +189,6 @@ async function connect() {
         time: hstore.sound?.seek(),
         id: data.message,
       };
-      console.log(message);
       store.wsMusic.send(JSON.stringify(message));
     }
     if (data.type == "refresh") {

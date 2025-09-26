@@ -199,13 +199,10 @@ function changePage(page) {
 
 // 添加到播放列表
 function addToPlaylist(song) {
-  // 检查是否已在播放列表中
-  const exists = mstore.playContainer.some(
-    (item) => item.songmid === song.songmid
-  );
-  if (!exists) {
-    mstore.playContainer.push(song);
-    mstore.sendPlayContainer("添加");
+  if (mstore.playContainer.length == 0) {
+    mstore.state = 1;
   }
+  mstore.playContainer.push(song);
+  mstore.sendPlayContainer("添加");
 }
 </script>

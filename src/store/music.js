@@ -4,6 +4,7 @@ export const musicStore = defineStore("music", {
   state: () => ({
     playContainer: [],
     state: "",
+    nextState: 0,
   }),
   actions: {
     sendPlayContainer(action) {
@@ -23,7 +24,7 @@ export const musicStore = defineStore("music", {
         console.log("已到最后一首，没有下一首");
         return;
       }
-
+      this.state = 1;
       this.playContainer = this.playContainer.slice(1);
     },
   },
