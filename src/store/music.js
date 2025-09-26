@@ -26,6 +26,7 @@ export const musicStore = defineStore("music", {
       }
       this.state = 1;
       this.playContainer = this.playContainer.slice(1);
+      this.sendPlayContainer("下一首");
     },
   },
 });
